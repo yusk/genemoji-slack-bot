@@ -1,36 +1,20 @@
 import collections
 import json
-import os
 import traceback
 from urllib.parse import unquote
 
 from fastapi import FastAPI, Request
 
-from src.genemoji import make_img_for_slack2
 from src.slack import SlackAPIWrapper
-from src.env import BOT_TOKEN, SLACK_COOKIE, TEAM_NAME, FONT_PATH
+from src.env import BOT_TOKEN, SLACK_COOKIE, TEAM_NAME
+from src.usecases import GENEMOJI_TEXTS, gen_d_upload_emoji
+
+setattr(SlackAPIWrapper, gen_d_upload_emoji.__name__, gen_d_upload_emoji)
 
 app = FastAPI()
 slack = SlackAPIWrapper(BOT_TOKEN, TEAM_NAME, SLACK_COOKIE)
 
 app_mention_id_cache = collections.deque([], 100)
-
-GENEMOJI_TEXTS = [
-    "絵文字作って",
-    "gen emoji",
-    "genemoji",
-    "make emoji",
-    "makeemoji",
-]
-
-
-def gen_d_upload_emoji(name, char, color, dirpath="./local"):
-    img = make_img_for_slack2(char, FONT_PATH, color=color)
-    filepath = f"{dirpath}/{char}.png"
-    os.makedirs(dirpath, exist_ok=True)
-    img.save(filepath)
-    slack.upload_emoji(name, filepath)
-    os.remove(filepath)
 
 
 @app.get('/')
@@ -73,7 +57,7 @@ async def handler(req: Request):
                 print(user, name, char, color)
 
                 try:
-                    gen_d_upload_emoji(name, char, color)
+                    slack.gen_d_upload_emoji(name, char, color)
                 except Exception:
                     slack.chat_post_message(
                         "\n".join(
@@ -108,7 +92,7 @@ async def genemoji(req: Request):
             color = None
         print(user_id, name, char, color)
 
-        gen_d_upload_emoji(name, char, color)
+        slack.gen_d_upload_emoji(name, char, color)
     except Exception:
         return {
             "text":
