@@ -20,7 +20,8 @@ def gen_d_upload_emoji(slack: SlackAPIWrapper,
                        font_path=FONT_PATH,
                        dirpath="./local"):
     img = make_img_for_slack2(char, font_path, color=color)
-    filepath = f"{dirpath}/{char}.png"
+    filename = char.replace('\n', '')
+    filepath = f"{dirpath}/{filename}.png"
     os.makedirs(dirpath, exist_ok=True)
     img.save(filepath)
     slack.upload_emoji(name, filepath)

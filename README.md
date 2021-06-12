@@ -10,8 +10,6 @@ cp .env.sample .env
 vim .env
 ```
 
-If you don't know how to set SLACK_COOKIE, please read [this link](https://github.com/smashwilson/slack-emojinator/blob/master/README.md).
-
 ## run local
 
 ```bash
