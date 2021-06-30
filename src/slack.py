@@ -6,6 +6,7 @@ import requests
 import chromedriver_binary  # nopa
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 
 class SlackAPIWrapper:
@@ -51,9 +52,10 @@ class SlackAPIWrapper:
         headers = self.get_headers()
         return requests.get(url, headers=headers)
 
-    def upload_emoji(self, emoji_name, filename):
+    def _driver_after_login(self, opt_args="--headless"):
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        if opt_args:
+            options.add_argument(opt_args)
 
         driver = webdriver.Chrome(options=options)
         driver.get(self.URL_CUSTOMIZE.format(team_name=self.team_name))
@@ -67,11 +69,16 @@ class SlackAPIWrapper:
         submit.submit()
 
         sleep(3)
+        return driver
+
+    def upload_emoji(self, emoji_name, filename, opt_args="--headless"):
+        driver = self._driver_after_login(opt_args=opt_args)
+
         add_btn = driver.find_element_by_xpath(
             '//button[@data-qa="customize_emoji_add_button"]')
         add_btn.click()
-
         sleep(1)
+
         emojiname = driver.find_element_by_id("emojiname")
         emojiname.send_keys(emoji_name)
         emojiimg = driver.find_element_by_id("emojiimg")
@@ -79,9 +86,32 @@ class SlackAPIWrapper:
         save_btn = driver.find_element_by_xpath(
             '//button[@data-qa="customize_emoji_add_dialog_go"]')
         save_btn.click()
-
         sleep(1)
+
         driver.quit()
+        return True
+
+    def delete_emoji(self, emoji_name, opt_args="--headless"):
+        driver = self._driver_after_login(opt_args=opt_args)
+
+        search = driver.find_element_by_id("customize_emoji_wrapper_search")
+        search.send_keys(emoji_name)
+        sleep(1)
+        search.send_keys(Keys.ENTER)
+        sleep(3)
+
+        x_btn = driver.find_element_by_xpath(
+            f'//button[@data-emoji-name="{emoji_name}"]')
+        x_btn.click()
+        sleep(1)
+
+        delete_btn = driver.find_element_by_xpath(
+            '//button[@data-qa="customize_emoji_single_delete_dialog_go"]')
+        delete_btn.click()
+        sleep(1)
+
+        driver.quit()
+        return True
 
     def print_emojis(self):
         res = self.emoji_list()
